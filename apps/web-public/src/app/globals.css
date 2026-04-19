@@ -1,0 +1,240 @@
+@import "tailwindcss";
+
+/* =========================
+   TOKENS
+========================= */
+:root{
+  /* Brand */
+  --brand-50:#d8e4f5;
+  --brand-100:#cddff6;
+  --brand-200:#cfe4ff;
+  --brand-300:#aedaff;
+  --brand-400:#85c4ff;
+  --brand-500:#5aaeff;
+
+  --brand:var(--brand-300);
+  --brand-600:var(--brand-400);
+  --brand-700:var(--brand-500);
+
+  /* Neutrals untuk komponen */
+  --bg:#f5f8ff;          /* surface sangat muda */
+  --panel:#f7fbff;       /* panel sangat muda */
+  --line:#dbe1ef;        /* garis halus */
+
+  --text:#0f172a;        /* teks utama */
+  --muted:#5b6a86;       /* teks sekunder */
+  --accent:var(--brand-300);
+
+  /* Navbar metrics */
+  --nav-sm:56px;
+  --nav-md:64px;
+  --nav-sub:36px;
+
+  /* Palet dongker (hero/pacific) */
+  --dongker-900:#0B2037;
+  --dongker-800:#10304f;
+  --dongker-700:#163a5f;
+  --dongker-accent:#38AECC;
+}
+
+/* =========================
+   BASE
+========================= */
+html,body{ height:100%; }
+
+body{
+  margin:0;
+  min-height:100%;
+  /* Gradasi global panjang (PACIFIC) */
+  background:
+    linear-gradient(
+      to bottom,
+      var(--dongker-900) 0%,
+      color-mix(in oklab, var(--dongker-900) 65%, transparent) 55%,
+      #ffffff 100%
+    );
+  background-attachment: fixed;      /* biar halus saat scroll */
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+/* Section transparan supaya gradient body terlihat penuh */
+section{ background: transparent; }
+
+/* Layout container */
+.container-page{ max-width:80rem; margin:0 auto; padding-inline:1rem; }
+.has-sticky{ padding-top: calc(var(--nav-sm) + var(--nav-sub)); }
+@media (min-width:768px){ .has-sticky{ padding-top: calc(var(--nav-md) + var(--nav-sub)); } }
+
+/* =========================
+   SURFACE COMPONENTS
+========================= */
+.card{
+  background:linear-gradient(180deg,
+    color-mix(in oklab, #fff 70%, var(--brand-50) 30%) 0%,
+    #fff 85%);
+  border:1px solid var(--line);
+  border-radius:1rem;
+  box-shadow:0 1px 2px rgba(15,23,42,.02), 0 6px 18px rgba(90,174,255,.06);
+  padding:1rem;
+}
+
+.input,.select{
+  width:100%;
+  border:1px solid color-mix(in oklab, var(--line) 88%, #dde6e0);
+  border-radius:1rem;
+  padding:.72rem 1rem;
+  font-size:.92rem;
+  background:linear-gradient(180deg, #fff 0%, color-mix(in oklab, #f1f5f3 72%, #fff) 100%);
+  outline:none;
+  color:var(--text);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.88), 0 8px 18px rgba(15,23,42,.04);
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.input::placeholder{ color:var(--muted); }
+.input:focus,.select:focus{
+  border-color:color-mix(in oklab, #3b82f6 52%, var(--line));
+  box-shadow:0 0 0 4px rgba(59,130,246,.14), 0 12px 24px rgba(15,23,42,.07);
+  transform:translateY(-1px);
+}
+
+.btn{
+  position:relative;
+  isolation:isolate;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.55rem;
+  min-height:48px;
+  padding:.8rem 1.2rem;
+  border-radius:1.2rem;
+  border:1px solid transparent;
+  font-weight:700;
+  letter-spacing:.01em;
+  cursor:pointer;
+  overflow:hidden;
+  transition:transform .18s ease, box-shadow .18s ease, filter .18s ease, background .18s ease, border-color .18s ease;
+}
+.btn::before{
+  content:"";
+  position:absolute;
+  inset:1px;
+  z-index:-2;
+  border-radius:inherit;
+  background:linear-gradient(180deg, rgba(255,255,255,.22), transparent 70%);
+}
+.btn::after{
+  content:"";
+  position:absolute;
+  inset:-140%;
+  z-index:-1;
+  background:linear-gradient(120deg, transparent 34%, rgba(255,255,255,.28) 48%, transparent 64%);
+  transform:translateX(-60%) rotate(10deg);
+  transition:transform .45s ease;
+}
+.btn:hover{
+  transform:translateY(-2px);
+}
+.btn:hover::after{
+  transform:translateX(18%) rotate(10deg);
+}
+.btn:active{
+  transform:translateY(0) scale(.985);
+}
+.btn:disabled{
+  opacity:.62;
+  cursor:not-allowed;
+}
+
+.btn-brand{
+  background:linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+  color:#fff;
+  border-color:rgba(29,78,216,.35);
+  box-shadow:0 18px 34px rgba(29,78,216,.24);
+}
+.btn-brand:hover{
+  filter:brightness(1.02);
+  box-shadow:0 22px 38px rgba(29,78,216,.28);
+}
+
+.btn-ghost{
+  background:rgba(255,255,255,.7);
+  color:var(--text);
+  border-color:rgba(15,23,42,.08);
+  box-shadow:0 10px 24px rgba(15,23,42,.07);
+}
+
+.btn-search{
+  background:linear-gradient(180deg, #0f172a, #1e293b);
+  color:#fff;
+  box-shadow:0 18px 34px rgba(15,23,42,.24);
+}
+
+/* =========================
+   HERO UTILITIES
+========================= */
+@layer utilities {
+  /* Latar hero khusus (lebih kontras) */
+  .hero-bg{
+    background:
+      radial-gradient(1200px 420px at 50% -12%,
+        color-mix(in oklab, var(--dongker-accent) 18%, transparent) 0%,
+        transparent 70%),
+      linear-gradient(135deg,
+        var(--dongker-900) 0%,
+        var(--dongker-800) 35%,
+        var(--dongker-700) 100%) !important;
+    color:#fff;
+  }
+
+  .hero-title{
+    color:#fff;
+    text-shadow:
+      0 2px 4px rgba(0,0,0,.55),
+      0 12px 28px rgba(0,0,0,.35);
+  }
+
+  .hero-subtitle{
+    color:#dbeafe;
+    text-shadow:0 1px 3px rgba(0,0,0,.45);
+  }
+
+  .card-on-hero{
+    background:rgba(255,255,255,.98);
+    border-color:rgba(0,0,0,.08);
+    color:var(--text);
+  }
+  .input-on-hero{
+    background:#fff;
+    border-color:rgba(0,0,0,.10);
+    color:var(--text);
+  }
+  .input-on-hero::placeholder{ color:var(--muted); opacity:1; }
+  .input-on-hero[type="date"]{ color:var(--text); }
+  .input-on-hero[type="date"]::-webkit-calendar-picker-indicator{ filter:none; opacity:1; }
+
+  /* Pills di hero */
+  .pill-dark{
+    background:rgba(255,255,255,.16);
+    border:1px solid rgba(255,255,255,.28);
+    color:#fff;
+  }
+  .pill-dark.is-active{
+    background:var(--dongker-accent);
+    border-color:var(--dongker-accent);
+    color:#0b1220;
+  }
+
+  /* Helper kecil putih samar */
+  .helper-on-hero{ color:rgba(255,255,255,.86); }
+}
+
+/* =========================
+   NAVBAR STATE
+========================= */
+.is-hero .navbar-transparent{
+  color:#fff;
+  text-shadow:0 1px 6px rgba(0,0,0,.25);
+}
+.is-hero .navbar-transparent a{ color:#fff; }

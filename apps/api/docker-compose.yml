@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: booking-villa-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: booking_villa
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d booking_villa"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  api:
+    container_name: booking-villa-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.production   # docker-only: DATABASE_URL boleh pakai host `db` hanya di network compose
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+      # - "5555:5555"   # BUKA INI HANYA JIKA KAMU MEMANG MAU Prisma Studio di prod (biasanya JANGAN)
+    # Healthcheck jalan setelah server up; biarkan CMD di Dockerfile yang urus migrate+start
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:4000/healthz >/dev/null 2>&1 || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  db_data:

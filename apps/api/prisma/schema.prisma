@@ -1,0 +1,599 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  KASIR
+  SELLER
+  AFFILIATE
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  BANNED
+  PENDING_VERIFICATION
+}
+
+enum PasswordResetAccessRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum SellerStatus {
+  PENDING_REVIEW
+  ACTIVE
+  SUSPENDED
+  REJECTED
+}
+
+enum ListingType {
+  VILLA
+  JEEP
+  TRANSPORT
+  PHOTOGRAPHER
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum ListingUnitType {
+  PER_NIGHT
+  PER_DAY
+  PER_TRIP
+  PER_SESSION
+}
+
+enum BookingStatus {
+  PENDING
+  AWAITING_PAYMENT
+  PAID
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  EXPIRED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  XENDIT
+  MANUAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  EXPIRED
+  FAILED
+  REFUNDED
+}
+
+enum WalletTransactionType {
+  BOOKING_IN
+  COMMISSION_OUT
+  ESCROW_RELEASE
+  WITHDRAW_REQUEST
+  WITHDRAW_PAID
+  REFUND_OUT
+  ADJUSTMENT
+}
+
+enum WalletTransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum WithdrawStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+enum ReviewStatus {
+  VISIBLE
+  HIDDEN
+  FLAGGED
+}
+
+enum WebsiteReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  HIDDEN
+}
+
+enum PromoCategory {
+  SEMUA
+  VILLA
+  JEEP
+  RENT
+  DOKUMENTASI
+}
+
+enum DashboardAudience {
+  SELLER
+  AFFILIATE
+  ALL_USERS
+}
+
+model User {
+  id                            String                       @id @default(uuid())
+  name                          String
+  email                         String                       @unique
+  password                      String?
+  role                          Role                         @default(USER)
+  phone                         String?
+  avatarUrl                     String?
+  status                        UserStatus                   @default(PENDING_VERIFICATION)
+  emailVerifiedAt               DateTime?
+  adminCanManageAccounts        Boolean                      @default(false)
+  adminCanReviewPasswordResets  Boolean                      @default(false)
+  passwordResetEnabled          Boolean                      @default(false)
+  passwordResetEnabledAt        DateTime?
+  archivedAt                    DateTime?
+  createdAt                     DateTime                     @default(now())
+  updatedAt                     DateTime                     @updatedAt
+
+  sellerProfile                 SellerProfile?
+  affiliateProfile              AffiliateProfile?
+  bookings                      Booking[]
+  reviews                       Review[]
+  websiteReviews                WebsiteReview[]
+  audits                        Audit[]
+  dashboardNotices              DashboardNotice[]            @relation("DashboardNoticeCreatedBy")
+  passwordResetRequests         PasswordResetAccessRequest[]
+  reviewedPasswordResetRequests PasswordResetAccessRequest[] @relation("PasswordResetReviewedBy")
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([archivedAt])
+  @@index([passwordResetEnabled, role])
+}
+
+model PasswordResetAccessRequest {
+  id           String                           @id @default(uuid())
+  userId       String
+  status       PasswordResetAccessRequestStatus @default(PENDING)
+  note         String?                          @db.VarChar(500)
+  requestedAt  DateTime                         @default(now())
+  reviewedAt   DateTime?
+  reviewedById String?
+  createdAt    DateTime                         @default(now())
+  updatedAt    DateTime                         @updatedAt
+
+  user         User                             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  reviewedBy   User?                            @relation("PasswordResetReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([userId, status, requestedAt])
+  @@index([status, requestedAt])
+  @@index([reviewedById, reviewedAt])
+}
+
+model AffiliateProfile {
+  id                 String            @id @default(uuid())
+  userId             String            @unique
+  code               String            @unique
+  displayName        String
+  legalName          String?
+  bio                String?
+  bankName           String?
+  bankCode           String?
+  accountNumber      String?
+  accountName        String?
+  commissionRateBps  Int               @default(500)
+  isActive           Boolean           @default(true)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  clicks             AffiliateClick[]
+  withdraws          AffiliateWithdraw[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+model AffiliateClick {
+  id          String            @id @default(uuid())
+  affiliateId String
+  code        String
+  landingPath String?
+  referrer    String?
+  visitorKey  String?
+  sessionKey  String?
+  userAgent   String?
+  createdAt   DateTime          @default(now())
+
+  affiliate   AffiliateProfile  @relation(fields: [affiliateId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([affiliateId, createdAt])
+  @@index([code, createdAt])
+  @@index([visitorKey, createdAt])
+}
+
+model AffiliateWithdraw {
+  id                    String            @id @default(uuid())
+  affiliateId           String
+  amount                Int
+  bankName              String?
+  bankCode              String
+  accountNumber         String
+  accountName           String
+  provider              PaymentProvider   @default(XENDIT)
+  externalDisbursementId String?          @unique
+  status                WithdrawStatus    @default(PENDING)
+  requestedAt           DateTime          @default(now())
+  approvedAt            DateTime?
+  paidAt                DateTime?
+  rejectedAt            DateTime?
+  failureReason         String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  affiliate             AffiliateProfile  @relation(fields: [affiliateId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([affiliateId, status, requestedAt])
+}
+
+model SellerProfile {
+  id            String       @id @default(uuid())
+  userId        String       @unique
+  displayName   String
+  legalName     String?
+  bio           String?
+  bankName      String?
+  bankCode      String?
+  accountNumber String?
+  accountName   String?
+  status        SellerStatus @default(PENDING_REVIEW)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  listings      Listing[]
+  bookings      Booking[]
+  wallet        Wallet?
+  withdraws     Withdraw[]
+  transactions  WalletTransaction[]
+
+  @@index([status])
+}
+
+model Listing {
+  id              String            @id @default(uuid())
+  sellerId        String
+  type            ListingType
+  title           String
+  slug            String            @unique
+  description     String
+  locationText    String
+  latitude        Decimal?          @db.Decimal(10, 7)
+  longitude       Decimal?          @db.Decimal(10, 7)
+  basePrice       Int
+  maxGuest        Int               @default(1)
+  unitType        ListingUnitType   @default(PER_NIGHT)
+  status          ListingStatus     @default(DRAFT)
+  metadata        Json?
+  publishedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  seller          SellerProfile     @relation(fields: [sellerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  images          ListingImage[]
+  availabilities  ListingAvailability[]
+  bookings        Booking[]
+  reviews         Review[]
+
+  @@index([sellerId])
+  @@index([type, status])
+  @@index([status])
+}
+
+model ListingImage {
+  id         String   @id @default(uuid())
+  listingId  String
+  url        String
+  altText    String?
+  sortOrder  Int      @default(0)
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([listingId, sortOrder])
+}
+
+model ListingAvailability {
+  id            String   @id @default(uuid())
+  listingId     String
+  date          DateTime @db.Date
+  basePrice     Int?
+  priceOverride Int?
+  stock         Int      @default(1)
+  reservedCount Int      @default(0)
+  isAvailable   Boolean  @default(true)
+  lockVersion   Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([listingId, date])
+  @@index([listingId, date])
+}
+
+model Booking {
+  id             String         @id @default(uuid())
+  code           String         @unique
+  checkoutCode   String?
+  userId         String
+  listingId      String
+  sellerId       String
+  buyerEmail     String?
+  buyerPhone     String?
+  promoPackageId String?
+  promoCode      String?
+  promoTitle     String?
+  startDate      DateTime       @db.Date
+  endDate        DateTime       @db.Date
+  totalDays      Int
+  qty            Int            @default(1)
+  guestCount     Int            @default(1)
+  pricePerUnit   Int
+  subtotal       Int
+  platformFee    Int            @default(0)
+  discountAmount Int            @default(0)
+  totalAmount    Int
+  status         BookingStatus  @default(PENDING)
+  paymentStatus  PaymentStatus  @default(PENDING)
+  expiresAt      DateTime?
+  paidAt         DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  notes          String?   @db.LongText
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  listing        Listing        @relation(fields: [listingId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  seller         SellerProfile  @relation(fields: [sellerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  promoPackage   PromoPackage?  @relation(fields: [promoPackageId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  payments       Payment[]
+  review         Review?
+  transactions   WalletTransaction[]
+
+  @@index([userId, createdAt])
+  @@index([sellerId, createdAt])
+  @@index([listingId, startDate, endDate])
+  @@index([status, paymentStatus])
+  @@index([promoPackageId])
+  @@index([checkoutCode])
+}
+
+model Payment {
+  id                     String          @id @default(uuid())
+  bookingId              String
+  provider               PaymentProvider @default(XENDIT)
+  externalId             String          @unique
+  invoiceUrl             String?
+  amount                 Int
+  currency               String          @default("IDR")
+  paymentMethod          String?
+  status                 PaymentStatus   @default(PENDING)
+  paidAt                 DateTime?
+  expiredAt              DateTime?
+  rawPayload             Json?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  booking                Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([bookingId])
+  @@index([provider, status])
+}
+
+model Wallet {
+  id               String              @id @default(uuid())
+  sellerId         String              @unique
+  balanceAvailable Int                 @default(0)
+  balancePending   Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  seller           SellerProfile       @relation(fields: [sellerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  transactions     WalletTransaction[]
+  withdraws        Withdraw[]
+}
+
+model WalletTransaction {
+  id             String                  @id @default(uuid())
+  walletId       String
+  sellerId       String
+  bookingId      String?
+  withdrawId     String?
+  type           WalletTransactionType
+  amount         Int
+  status         WalletTransactionStatus @default(PENDING)
+  referenceCode  String?
+  description    String?
+  meta           Json?
+  createdAt      DateTime                @default(now())
+
+  wallet         Wallet                  @relation(fields: [walletId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  seller         SellerProfile           @relation(fields: [sellerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  booking        Booking?                @relation(fields: [bookingId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  withdraw       Withdraw?               @relation(fields: [withdrawId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([walletId, createdAt])
+  @@index([sellerId, createdAt])
+  @@index([type, status])
+}
+
+model Withdraw {
+  id                    String          @id @default(uuid())
+  sellerId              String
+  walletId              String
+  amount                Int
+  bankName              String?
+  bankCode              String
+  accountNumber         String
+  accountName           String
+  provider              PaymentProvider @default(XENDIT)
+  externalDisbursementId String?        @unique
+  status                WithdrawStatus  @default(PENDING)
+  requestedAt           DateTime        @default(now())
+  approvedAt            DateTime?
+  paidAt                DateTime?
+  rejectedAt            DateTime?
+  failureReason         String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  seller                SellerProfile   @relation(fields: [sellerId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  wallet                Wallet          @relation(fields: [walletId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  transactions          WalletTransaction[]
+
+  @@index([sellerId, status, requestedAt])
+  @@index([walletId])
+}
+
+model Review {
+  id          String       @id @default(uuid())
+  bookingId   String       @unique
+  userId      String
+  listingId   String
+  rating      Int
+  comment     String
+  status      ReviewStatus @default(VISIBLE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  booking     Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  listing     Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([listingId, createdAt])
+  @@index([userId, createdAt])
+  @@index([status])
+}
+
+model Audit {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorRole  Role?
+  action     String
+  targetType String
+  targetId   String?
+  meta       Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([actorId, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model CmsHomepageSection {
+  id               String   @id @default(uuid())
+  key              String   @unique
+  label            String
+  description      String?
+  draftContent     Json
+  publishedContent Json?
+  isVisible        Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  publishedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([sortOrder])
+  @@index([isVisible, sortOrder])
+}
+
+model DashboardNotice {
+  id         String            @id @default(uuid())
+  title      String            @db.VarChar(160)
+  body       String            @db.LongText
+  audience   DashboardAudience
+  ctaLabel   String?           @db.VarChar(80)
+  ctaHref    String?           @db.VarChar(500)
+  isActive   Boolean           @default(true)
+  startsAt   DateTime?
+  endsAt     DateTime?
+  sortOrder  Int               @default(0)
+  createdById String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  createdBy  User?             @relation("DashboardNoticeCreatedBy", fields: [createdById], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([audience, isActive, sortOrder])
+  @@index([startsAt, endsAt])
+  @@index([createdById, createdAt])
+}
+
+model PromoPackage {
+  id          String        @id @default(uuid())
+  slug        String        @unique
+  title       String
+  code        String        @unique
+  description String
+  discount    String
+  badge       String?
+  imageUrl    String?
+  terms       String?
+  href        String
+  category    PromoCategory @default(SEMUA)
+  expiresAt   DateTime
+  isActive    Boolean       @default(true)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  bookings    Booking[]
+
+  @@index([isActive, sortOrder])
+  @@index([category, isActive])
+}
+
+model WebsiteReview {
+  id         String              @id @default(uuid())
+  userId     String?
+  name       String
+  city       String?
+  rating     Int
+  comment    String
+  imageUrl   String?
+  status     WebsiteReviewStatus @default(PENDING)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  user       User?               @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}

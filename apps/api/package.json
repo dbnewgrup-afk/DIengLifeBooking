@@ -1,0 +1,64 @@
+{
+  "name": "booking-villa-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18.18"
+  },
+
+  "imports": {
+    "#lib/*": "./dist/lib/*",
+    "#routes/*": "./dist/routes/*",
+    "#controllers/*": "./dist/controllers/*",
+    "#repos/*": "./dist/repositories/*",
+    "#services/*": "./dist/services/*",
+    "#middlewares/*": "./dist/middlewares/*",
+    "#models/*": "./dist/models/*",
+    "#schemas/*": "./dist/schemas/*",
+    "#utils/*": "./dist/utils/*",
+    "#types": "./dist/types/index.d.js"
+  },
+
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p ./tsconfig.json",
+    "start": "node dist/server.js",
+    "seed": "tsx prisma/seed.ts",
+    "seed:test-accounts": "tsx prisma/seed-test-accounts.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:format": "prisma format",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy"
+  },
+
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^3.0.2",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^7.2.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.1",
+    "pino": "^9.14.0",
+    "pino-http": "^10.5.0",
+    "uuid": "^13.0.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.23",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^22.8.1",
+    "@types/uuid": "^10.0.0",
+    "prisma": "^5.22.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.6.3"
+  }
+}

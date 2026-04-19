@@ -1,0 +1,61 @@
+/* web/src/styles/hero.css */
+
+/* Token dasar kalau belum ada */
+:root {
+  --fg: #0f172a;           /* teks utama (slate-900) */
+  --muted: #64748b;        /* slate-500 */
+  --panel: #7930f7;        /* card putih */
+}
+
+/* Saat di hero: latar belakang gelap + card putih */
+body.is-hero .hero-bg {
+  /* kamu mungkin sudah punya gradient sendiri; ini fallback */
+  background: radial-gradient(1200px 400px at 50% -100px, #0b2960 0%, #081a3a 60%, #07142b 100%);
+}
+
+/* Panel & input di atas hero: paksa kontras */
+.hero-contrast {
+  background: var(--panel);
+  color: var(--fg);
+}
+
+/* input dalam dock hero */
+.hero-input {
+  width: 100%;
+  outline: none;
+  background: transparent;
+  color: var(--fg) !important;
+  /* placeholder biar tidak “hilang” */
+  &::placeholder {
+    color: var(--muted-hero, #6b7a90);
+    opacity: 1; /* tailwind default sering 0.4 dari reset */
+  }
+}
+
+/* tombol "Pilih jam" yang bukan <input> */
+.hero-input-btn {
+  color: var(--fg);
+}
+
+/* tombol cari biar teksnya nggak pudar */
+.hero-btn {
+  color: #0b1a33;               /* gelap supaya kebaca */
+  background: #2a6ec7;          /* biru pastel */
+  border: 1px solid #043077;
+}
+.hero-btn[disabled] {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+/* kalau ada tema kamu yang overrule .input/.card, kita kunci icon & teks */
+body.is-hero .input-on-hero,
+body.is-hero .input-on-hero * {
+  color: var(--fg);
+}
+
+/* date input di chromium suka pakai warna aneh */
+body.is-hero input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none; /* jangan dipudarkan */
+  opacity: 1;
+}
