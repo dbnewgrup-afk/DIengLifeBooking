@@ -11,9 +11,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "start": "turbo run start",
+    "dev": "turbo run dev --filter=web",
+    "build": "turbo run build --filter=web",
+    "start": "turbo run start --filter=web",
     "smoke:launch": "node scripts/smoke-launch.mjs"
   },
   "keywords": [],
