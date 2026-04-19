@@ -18,8 +18,8 @@
     "hostinger:web-public:start": "npm run start --workspace=apps/web-public",
     "hostinger:web-admin:build": "npm run build --workspace=apps/web-admin",
     "hostinger:web-admin:start": "npm run start --workspace=apps/web-admin",
-    "hostinger:api:build": "npm run prisma:generate --workspace=apps/api && npm run prisma:migrate:deploy --workspace=apps/api && npm run build --workspace=apps/api",
-    "hostinger:api:build:nomigrate": "npm run prisma:generate --workspace=apps/api && npm run build --workspace=apps/api",
+    "hostinger:api:build": "npm install --workspace=apps/api --no-save typescript && npm run prisma:generate --workspace=apps/api && npm run prisma:migrate:deploy --workspace=apps/api && npm run build --workspace=apps/api",
+    "hostinger:api:build:nomigrate": "npm install --workspace=apps/api --no-save typescript && npm run prisma:generate --workspace=apps/api && npm run build --workspace=apps/api",
     "hostinger:api:start": "npm run start --workspace=apps/api",
     "smoke:launch": "node scripts/smoke-launch.mjs"
   },
